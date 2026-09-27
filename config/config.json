@@ -1,0 +1,31 @@
+{
+  "storage": {
+    "landing_path": "abfss://landing@<storage-account>.dfs.core.windows.net/retail"
+  },
+
+  "apis": {
+    "customer": {
+      "endpoint": "https://api.example.com/customers",
+      "method": "GET",
+      "incremental_column": "updated_at",
+      "watermark_key": "customer",
+      "page_size": 100,
+      "landing_folder": "customers"
+    },
+
+    "sales": {
+      "endpoint": "https://api.example.com/sales",
+      "method": "GET",
+      "incremental_column": "updated_at",
+      "watermark_key": "sales",
+      "page_size": 100,
+      "landing_folder": "sales"
+    }
+  },
+
+  "retry": {
+    "max_retries": 3,
+    "backoff_seconds": 5,
+    "retry_status_codes": [429, 500, 502, 503, 504]
+  }
+}
