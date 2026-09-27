@@ -1,4 +1,20 @@
+
+# # APIClient
+#    │
+#    ├── Gets endpoint from config
+#    │
+#    ├── Gets Square token from environment variable
+#    │
+#    ├── Creates authentication headers
+#    │
+#    ├── Sends POST request
+#    │
+#    ├── Checks HTTP status
+#    │
+#    └── Returns JSON response
+
 import os
+
 import requests
 
 
