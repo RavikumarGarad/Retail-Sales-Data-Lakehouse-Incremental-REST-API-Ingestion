@@ -1,33 +1,46 @@
-import json
-from pathlib import Path
+from datetime import datetime, timezone
 
 
-class WatermarkManager:
+class IncrementalLoader:
 
-    def __init__(self, file_path):
-        self.file_path = Path(file_path)
+    def __init__(self, pagination_handler, watermark_manager):
+        self.pagination_handler = pagination_handler
+        self.watermark_manager = watermark_manager
 
-    def _load(self):
-        if not self.file_path.exists():
-            return {}
+    def build_payload(self, location_ids, last_watermark):
+        current_time = datetime.now(timezone.utc).isoformat()
 
-        with open(self.file_path, "r") as file:
-            return json.load(file)
+        return {
+            "location_ids": location_ids,
+            "limit": 500,
+            "return_entries": False,
+            "query": {
+                "filter": {
+                    "date_time_filter": {
+                        "updated_at": {
+                            "start_at": last_watermark,
+                            "end_at": current_time
+                        }
+                    }
+                },
+                "sort": {
+                    "sort_field": "UPDATED_AT",
+                    "sort_order": "ASC"
+                }
+            }
+        }
 
-    def get_watermark(self, key, default_value):
-        watermarks = self._load()
-
-        return watermarks.get(key, default_value)
-
-    def update_watermark(self, key, watermark):
-        watermarks = self._load()
-
-        watermarks[key] = watermark
-
-        self.file_path.parent.mkdir(
-            parents=True,
-            exist_ok=True
+    def load(self, location_ids, default_watermark):
+        last_watermark = self.watermark_manager.get_watermark(
+            "sales",
+            default_watermark
         )
 
-        with open(self.file_path, "w") as file:
-            json.dump(watermarks, file, indent=4)
+        payload = self.build_payload(
+            location_ids,
+            last_watermark
+        )
+
+        records = self.pagination_handler.fetch_all(payload)
+
+        return records
