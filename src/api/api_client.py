@@ -15,32 +15,28 @@
 
 import os
 
-import requests
-
-
 class APIClient:
 
-    def __init__(self, endpoint):
+    def __init__(self, endpoint, retry_handler):
         self.endpoint = endpoint
+        self.retry_handler = retry_handler
         self.access_token = os.getenv("SQUARE_ACCESS_TOKEN")
 
         if not self.access_token:
-            raise ValueError("SQUARE_ACCESS_TOKEN environment variable is not set.")
+            raise ValueError(
+                "SQUARE_ACCESS_TOKEN environment variable is not set."
+            )
 
     def post(self, payload):
+
         headers = {
             "Authorization": f"Bearer {self.access_token}",
             "Content-Type": "application/json",
             "Accept": "application/json"
         }
 
-        response = requests.post(
-            self.endpoint,
+        return self.retry_handler.post(
+            endpoint=self.endpoint,
             headers=headers,
-            json=payload,
-            timeout=30
+            payload=payload
         )
-
-        response.raise_for_status()
-
-        return response.json()
