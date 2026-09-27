@@ -1,0 +1,68 @@
+retail-lakehouse/
+│
+├── README.md
+├── .gitignore
+├── requirements.txt
+│
+├── config/
+│   └── config.json
+│
+├── airflow/
+│   └── dags/
+│       └── retail_lakehouse_dag.py
+│
+├── notebooks/
+│   ├── 01_api_ingestion/
+│   │   └── api_ingestion_demo.py
+│   │
+│   ├── 02_bronze_processing/
+│   │   └── bronze_processing.py
+│   │
+│   ├── 03_silver_processing/
+│   │   ├── customer_silver.py
+│   │   └── sales_silver.py
+│   │
+│   ├── 04_gold_processing/
+│   │   └── business_aggregations.py
+│   │
+│   └── 05_data_quality/
+│       └── data_quality_checks.py
+│
+├── src/
+│   ├── api/
+│   │   ├── api_client.py
+│   │   ├── incremental_loader.py
+│   │   ├── pagination.py
+│   │   └── retry_handler.py
+│   │
+│   ├── bronze/
+│   │   └── bronze_processing.py
+│   │
+│   ├── silver/
+│   │   ├── customer_transformations.py
+│   │   └── sales_transformations.py
+│   │
+│   ├── gold/
+│   │   └── business_aggregations.py
+│   │
+│   └── utils/
+│       ├── watermark_manager.py
+│       ├── data_quality.py
+│       └── delta_utils.py
+│
+├── sql/
+│   ├── create_control_tables.sql
+│   └── create_gold_tables.sql
+│
+├── sample_data/
+│   ├── customer_sample.json
+│   └── sales_sample.json
+│
+├── tests/
+│   └── test_transformations.py
+│
+└── docs/
+    ├── architecture.md
+    ├── incremental_loading.md
+    ├── api_error_handling.md
+    └── medallion_architecture.md
