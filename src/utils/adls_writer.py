@@ -1,67 +1,98 @@
+"""
+ADLS Gen2 Writer
+
+Responsible for writing raw API data to
+Azure Data Lake Storage Gen2 landing zone.
+"""
+
 import json
-import os
+from datetime import datetime
 
 from azure.storage.filedatalake import DataLakeServiceClient
 
 
 class ADLSWriter:
 
-    def __init__(self, landing_path):
-        self.storage_account = os.getenv("AZURE_STORAGE_ACCOUNT")
-        self.storage_key = os.getenv("AZURE_STORAGE_KEY")
+    def __init__(self, config):
+        """
+        Initialize ADLS connection using configuration.
+        """
 
-        if not self.storage_account or not self.storage_key:
-            raise ValueError(
-                "AZURE_STORAGE_ACCOUNT or AZURE_STORAGE_KEY is not set."
+        self.config = config
+
+        storage_account = config["adls"]["storage_account"]
+        container = config["adls"]["container"]
+        account_key = config["adls"]["account_key"]
+
+        self.container_client = (
+            DataLakeServiceClient(
+                account_url=f"https://{storage_account}.dfs.core.windows.net",
+                credential=account_key
             )
-
-        self.service_client = DataLakeServiceClient(
-            account_url=f"https://{self.storage_account}.dfs.core.windows.net",
-            credential=self.storage_key
+            .get_file_system_client(container)
         )
 
-    def write_json(self, records, entity_name):
+    def write_json(self, records, target_path):
+        """
+        Write JSON records to ADLS Gen2.
+
+        Parameters:
+            records      : List of API records
+            target_path  : Destination path in ADLS
+        """
 
         if not records:
             print("No records to write.")
-            return None
+            return
 
-        file_system, base_path = self._parse_adls_path()
+        try:
 
-        file_system_client = self.service_client.get_file_system_client(
-            file_system
-        )
+            # Convert records to JSON
+            json_data = json.dumps(
+                records,
+                indent=2,
+                default=str
+            )
 
-        file_path = (
-            f"{base_path}/{entity_name}/"
-            f"{entity_name}_{self._timestamp()}.json"
-        )
+            # Create file client
+            file_client = self.container_client.get_file_client(
+                target_path
+            )
 
-        file_client = file_system_client.get_file_client(file_path)
+            # Upload data
+            file_client.upload_data(
+                json_data,
+                overwrite=True
+            )
 
-        data = json.dumps(records, indent=2)
+            print(
+                f"Successfully written "
+                f"{len(records)} records to ADLS: "
+                f"{target_path}"
+            )
 
-        file_client.upload_data(
-            data,
-            overwrite=True
-        )
+        except Exception as error:
 
-        print(f"Successfully landed data to: {file_path}")
+            print(
+                f"Failed to write data to ADLS: {error}"
+            )
 
-        return file_path
+            raise
 
-    def _parse_adls_path(self):
-        path = self.landing_path.replace("abfss://", "")
 
-        container, path = path.split("@", 1)
-        path = path.split(".dfs.core.windows.net/", 1)[1]
+if __name__ == "__main__":
 
-        return container, path
+    import json
 
-    @staticmethod
-    def _timestamp():
-        from datetime import datetime, timezone
+    # Load project configuration
+    with open(
+        "config/config.json",
+        "r",
+        encoding="utf-8"
+    ) as file:
 
-        return datetime.now(timezone.utc).strftime(
-            "%Y%m%d%H%M%S"
-        )
+        config = json.load(file)
+
+    writer = ADLSWriter(config)
+
+    print("ADLS Writer initialized successfully.")
